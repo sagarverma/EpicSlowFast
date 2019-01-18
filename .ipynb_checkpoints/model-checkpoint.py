@@ -62,12 +62,14 @@ class Bottleneck(nn.Module):
 
 
 class SlowPath(nn.Module):
-    def __init__(self, inp_shape, temporal_stride):
+    def __init__(self, inp_shape, temporal_stride, cuda=True):
         super(SlowPath, self).__init__()
         self.inplanes = 64
         self.temporal_stride = temporal_stride
         self.inp_shape = inp_shape
         self.sample_ids = torch.tensor([x for x in range(0, inp_shape[1], temporal_stride)])
+        if cuda:
+            self.sample_ids = self.sample_ids.cuda()
 
         self.conv1 = nn.Conv3d(3, 64, kernel_size=(1,7,7), stride=(1,2,2), padding=(0,3,3))
         self.bn1 = nn.BatchNorm3d(64)
@@ -94,7 +96,7 @@ class SlowPath(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        return x
+        return self.avgpool(x)
 
     def _make_layer(self, block, planes, blocks, stride=(1,1,1), tempo_conv=False):
         downsample = None
@@ -113,13 +115,15 @@ class SlowPath(nn.Module):
         return nn.Sequential(*layers)
 
 class FastPath(nn.Module):
-    def __init__(self, inp_shape, temporal_stride):
+    def __init__(self, inp_shape, temporal_stride, cuda=True):
         super(FastPath, self).__init__()
         self.inplanes = 8
         self.temporal_stride = temporal_stride
         self.inp_shape = inp_shape
         self.sample_ids = torch.tensor([x for x in range(0, inp_shape[1], temporal_stride)])
-
+        if cuda:
+            self.sample_ids = self.sample_ids.cuda()
+            
         self.conv1 = nn.Conv3d(3, 8, kernel_size=(5,7,7), stride=(1,2,2), padding=(2,3,3))
         self.bn1 = nn.BatchNorm3d(8)
         self.relu = nn.ReLU(inplace=True)
@@ -145,7 +149,7 @@ class FastPath(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        return x
+        return self.avgpool(x)
 
     def _make_layer(self, block, planes, blocks, stride=(1,1,1), tempo_conv=False):
         downsample = None
