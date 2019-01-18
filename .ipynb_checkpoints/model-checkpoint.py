@@ -96,7 +96,7 @@ class SlowPath(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        return x
+        return self.avgpool(x)
 
     def _make_layer(self, block, planes, blocks, stride=(1,1,1), tempo_conv=False):
         downsample = None
@@ -149,7 +149,7 @@ class FastPath(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        return x
+        return self.avgpool(x)
 
     def _make_layer(self, block, planes, blocks, stride=(1,1,1), tempo_conv=False):
         downsample = None
